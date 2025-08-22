@@ -5,61 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Exemplo de Configuração - Mapa do Tocantins</title>
     <link rel="stylesheet" href="styles.css" />
-    <style>
-      .controls {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        max-width: 300px;
-        z-index: 1000;
-      }
-
-      .control-group {
-        margin-bottom: 15px;
-      }
-
-      .control-group label {
-        display: block;
-        margin-bottom: 5px;
-        font-weight: bold;
-        font-size: 12px;
-      }
-
-      .control-group input,
-      .control-group select {
-        width: 100%;
-        padding: 5px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-      }
-
-      .color-input {
-        height: 30px;
-      }
-
-      button {
-        background: #007cba;
-        color: white;
-        border: none;
-        padding: 8px 16px;
-        border-radius: 4px;
-        cursor: pointer;
-        margin-right: 10px;
-        margin-bottom: 10px;
-      }
-
-      button:hover {
-        background: #005a87;
-      }
-    </style>
+    <link rel="stylesheet" href="controls.css" />
   </head>
   <body>
-    <div id="map"></div>
-    <div id="tooltip"></div>
+    <div class="map-container">
+      <svg id="map"></svg>
+      <div class="tooltip" id="tooltip"></div>
+    </div>
 
     <div class="controls">
       <h3>Configurações do Mapa</h3>
@@ -104,7 +56,7 @@
           step="0.5"
           value="1"
         />
-        <span id="strokeWidthValue">1px</span>
+        <span id="strokeWidthValue" class="range-value">1px</span>
       </div>
 
       <div class="control-group">
@@ -117,13 +69,13 @@
           step="0.1"
           value="1"
         />
-        <span id="minZoomValue">1x</span>
+        <span id="minZoomValue" class="range-value">1x</span>
       </div>
 
       <div class="control-group">
         <label>Zoom máximo:</label>
         <input type="range" id="maxZoom" min="5" max="20" step="1" value="10" />
-        <span id="maxZoomValue">10x</span>
+        <span id="maxZoomValue" class="range-value">10x</span>
       </div>
 
       <div class="control-group">
@@ -136,7 +88,7 @@
       </div>
 
       <div class="control-group">
-        <label>
+        <label class="checkbox-label">
           <input type="checkbox" id="labelsEnabled" />
           Exibir nomes dos municípios
         </label>
@@ -152,7 +104,7 @@
           step="1"
           value="10"
         />
-        <span id="fontSizeValue">10px</span>
+        <span id="fontSizeValue" class="range-value">10px</span>
       </div>
 
       <div class="control-group">
@@ -175,42 +127,46 @@
           step="0.1"
           value="2"
         />
-        <span id="minZoomLabelsValue">2x</span>
+        <span id="minZoomLabelsValue" class="range-value">2x</span>
       </div>
 
       <div class="control-group">
-        <label>
+        <label class="checkbox-label">
           <input type="checkbox" id="selectionEnabled" checked />
           Habilitar seleção
         </label>
       </div>
 
       <div class="control-group">
-        <label>
+        <label class="checkbox-label">
           <input type="checkbox" id="clearOnBackground" checked />
           Limpar seleção ao clicar no fundo
         </label>
       </div>
 
       <div class="control-group">
-        <label>
+        <label class="checkbox-label">
           <input type="checkbox" id="clearOnEsc" checked />
           Limpar seleção com tecla ESC
         </label>
       </div>
 
       <div class="control-group">
-        <label>
+        <label class="checkbox-label">
           <input type="checkbox" id="clearOnDoubleClick" />
           Limpar seleção com duplo clique
         </label>
       </div>
 
-      <button onclick="aplicarConfiguracoes()">Aplicar</button>
-      <button onclick="resetarConfiguracoes()">Resetar</button>
-      <button onclick="limparSelecao()">Limpar Seleção</button>
-      <button onclick="salvarConfiguracoes()">Salvar</button>
-      <button onclick="carregarConfiguracoes()">Carregar</button>
+      <div class="controls-buttons">
+        <button onclick="aplicarConfiguracoes()">Aplicar</button>
+        <button onclick="resetarConfiguracoes()" class="secondary">
+          Resetar
+        </button>
+        <button onclick="limparSelecao()" class="danger">Limpar Seleção</button>
+        <button onclick="salvarConfiguracoes()" class="success">Salvar</button>
+        <button onclick="carregarConfiguracoes()">Carregar</button>
+      </div>
     </div>
 
     <script src="https://d3js.org/d3.v7.min.js"></script>
