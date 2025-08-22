@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Exemplo de Configuração - Mapa do Tocantins</title>
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      .controls {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        max-width: 300px;
+        z-index: 1000;
+      }
+
+      .control-group {
+        margin-bottom: 15px;
+      }
+
+      .control-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        font-size: 12px;
+      }
+
+      .control-group input,
+      .control-group select {
+        width: 100%;
+        padding: 5px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+
+      .color-input {
+        height: 30px;
+      }
+
+      button {
+        background: #007cba;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-right: 10px;
+        margin-bottom: 10px;
+      }
+
+      button:hover {
+        background: #005a87;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <div id="tooltip"></div>
+
+    <div class="controls">
+      <h3>Configurações do Mapa</h3>
+
+      <div class="control-group">
+        <label>Cor de preenchimento:</label>
+        <input
+          type="color"
+          id="fillColor"
+          class="color-input"
+          value="#69b3a2"
+        />
+      </div>
+
+      <div class="control-group">
+        <label>Cor ao passar o mouse:</label>
+        <input
+          type="color"
+          id="hoverColor"
+          class="color-input"
+          value="#a8e6cf"
+        />
+      </div>
+
+      <div class="control-group">
+        <label>Cor da borda:</label>
+        <input
+          type="color"
+          id="strokeColor"
+          class="color-input"
+          value="#ffffff"
+        />
+      </div>
+
+      <div class="control-group">
+        <label>Largura da borda:</label>
+        <input
+          type="range"
+          id="strokeWidth"
+          min="0.5"
+          max="5"
+          step="0.5"
+          value="1"
+        />
+        <span id="strokeWidthValue">1px</span>
+      </div>
+
+      <div class="control-group">
+        <label>Zoom mínimo:</label>
+        <input
+          type="range"
+          id="minZoom"
+          min="0.5"
+          max="3"
+          step="0.1"
+          value="1"
+        />
+        <span id="minZoomValue">1x</span>
+      </div>
+
+      <div class="control-group">
+        <label>Zoom máximo:</label>
+        <input type="range" id="maxZoom" min="5" max="20" step="1" value="10" />
+        <span id="maxZoomValue">10x</span>
+      </div>
+
+      <div class="control-group">
+        <label>Estilo do tooltip:</label>
+        <select id="tooltipStyle">
+          <option value="minimal">Minimal</option>
+          <option value="detailed">Detalhado</option>
+          <option value="custom">Personalizado</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <label>
+          <input type="checkbox" id="labelsEnabled" />
+          Exibir nomes dos municípios
+        </label>
+      </div>
+
+      <div class="control-group">
+        <label>Tamanho da fonte:</label>
+        <input
+          type="range"
+          id="fontSize"
+          min="8"
+          max="20"
+          step="1"
+          value="10"
+        />
+        <span id="fontSizeValue">10px</span>
+      </div>
+
+      <div class="control-group">
+        <label>Cor do texto:</label>
+        <input
+          type="color"
+          id="labelColor"
+          class="color-input"
+          value="#333333"
+        />
+      </div>
+
+      <div class="control-group">
+        <label>Zoom mínimo para labels:</label>
+        <input
+          type="range"
+          id="minZoomLabels"
+          min="1"
+          max="5"
+          step="0.1"
+          value="2"
+        />
+        <span id="minZoomLabelsValue">2x</span>
+      </div>
+
+      <div class="control-group">
+        <label>
+          <input type="checkbox" id="selectionEnabled" checked />
+          Habilitar seleção
+        </label>
+      </div>
+
+      <div class="control-group">
+        <label>
+          <input type="checkbox" id="clearOnBackground" checked />
+          Limpar seleção ao clicar no fundo
+        </label>
+      </div>
+
+      <div class="control-group">
+        <label>
+          <input type="checkbox" id="clearOnEsc" checked />
+          Limpar seleção com tecla ESC
+        </label>
+      </div>
+
+      <div class="control-group">
+        <label>
+          <input type="checkbox" id="clearOnDoubleClick" />
+          Limpar seleção com duplo clique
+        </label>
+      </div>
+
+      <button onclick="aplicarConfiguracoes()">Aplicar</button>
+      <button onclick="resetarConfiguracoes()">Resetar</button>
+      <button onclick="limparSelecao()">Limpar Seleção</button>
+      <button onclick="salvarConfiguracoes()">Salvar</button>
+      <button onclick="carregarConfiguracoes()">Carregar</button>
+    </div>
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="script.js"></script>
+
+    <script>
+      // Aguardar o mapa carregar
+      setTimeout(() => {
+        inicializarControles();
+      }, 1000);
+
+      function inicializarControles() {
+        // Atualizar valores dos sliders
+        document
+          .getElementById("strokeWidth")
+          .addEventListener("input", function () {
+            document.getElementById("strokeWidthValue").textContent =
+              this.value + "px";
+          });
+
+        document
+          .getElementById("minZoom")
+          .addEventListener("input", function () {
+            document.getElementById("minZoomValue").textContent =
+              this.value + "x";
+          });
+
+        document
+          .getElementById("maxZoom")
+          .addEventListener("input", function () {
+            document.getElementById("maxZoomValue").textContent =
+              this.value + "x";
+          });
+
+        document
+          .getElementById("fontSize")
+          .addEventListener("input", function () {
+            document.getElementById("fontSizeValue").textContent =
+              this.value + "px";
+          });
+
+        document
+          .getElementById("minZoomLabels")
+          .addEventListener("input", function () {
+            document.getElementById("minZoomLabelsValue").textContent =
+              this.value + "x";
+          });
+      }
+
+      function aplicarConfiguracoes() {
+        const novaConfig = {
+          colors: {
+            default: document.getElementById("fillColor").value,
+            hover: document.getElementById("hoverColor").value,
+            stroke: document.getElementById("strokeColor").value,
+          },
+          stroke: {
+            width: parseFloat(document.getElementById("strokeWidth").value),
+          },
+          zoom: {
+            min: parseFloat(document.getElementById("minZoom").value),
+            max: parseFloat(document.getElementById("maxZoom").value),
+          },
+          selection: {
+            enabled: document.getElementById("selectionEnabled").checked,
+            clearOnBackgroundClick:
+              document.getElementById("clearOnBackground").checked,
+            clearOnEscKey: document.getElementById("clearOnEsc").checked,
+            clearOnDoubleClick:
+              document.getElementById("clearOnDoubleClick").checked,
+          },
+          labels: {
+            enabled: document.getElementById("labelsEnabled").checked,
+            fontSize: parseInt(document.getElementById("fontSize").value),
+            color: document.getElementById("labelColor").value,
+            minZoomLevel: parseFloat(
+              document.getElementById("minZoomLabels").value
+            ),
+          },
+        };
+
+        const tooltipStyle = document.getElementById("tooltipStyle").value;
+
+        if (tooltipStyle === "detailed") {
+          novaConfig.tooltip = {
+            customBuilder: (d) => `
+                        <strong>${d.properties.name || "Município"}</strong><br>
+                        <small>Estado: Tocantins</small><br>
+                        <small>Região: Norte</small><br>
+                        <small>Coordenadas: ${
+                          d.geometry.coordinates ? "Disponíveis" : "N/A"
+                        }</small>
+                    `,
+          };
+        } else if (tooltipStyle === "custom") {
+          novaConfig.tooltip = {
+            customBuilder: (d) => `
+                        <div style="text-align: center;">
+                            🏛️ <strong>${
+                              d.properties.name || "Município"
+                            }</strong><br>
+                            📍 Tocantins - Brasil
+                        </div>
+                    `,
+          };
+        }
+
+        // Aplicar configurações usando MapUtils
+        if (window.MapUtils) {
+          window.MapUtils.updateConfig(novaConfig);
+
+          // Recarregar o mapa com as novas configurações
+          d3.select("#map").selectAll("*").remove();
+          initMap();
+
+          console.log("Configurações aplicadas:", novaConfig);
+        }
+      }
+
+      function resetarConfiguracoes() {
+        // Resetar para valores padrão
+        document.getElementById("fillColor").value = "#69b3a2";
+        document.getElementById("hoverColor").value = "#4a9b8e";
+        document.getElementById("strokeColor").value = "#ffffff";
+        document.getElementById("strokeWidth").value = "1";
+        document.getElementById("minZoom").value = "1";
+        document.getElementById("maxZoom").value = "10";
+        document.getElementById("tooltipStyle").value = "minimal";
+        document.getElementById("labelsEnabled").checked = false;
+        document.getElementById("fontSize").value = "10";
+        document.getElementById("labelColor").value = "#333333";
+        document.getElementById("minZoomLabels").value = "2";
+        document.getElementById("selectionEnabled").checked = true;
+        document.getElementById("clearOnBackground").checked = true;
+        document.getElementById("clearOnEsc").checked = true;
+        document.getElementById("clearOnDoubleClick").checked = false;
+
+        // Atualizar displays
+        document.getElementById("strokeWidthValue").textContent = "1px";
+        document.getElementById("minZoomValue").textContent = "1x";
+        document.getElementById("maxZoomValue").textContent = "10x";
+        document.getElementById("fontSizeValue").textContent = "10px";
+        document.getElementById("minZoomLabelsValue").textContent = "2x";
+
+        // Resetar configurações do mapa
+        if (window.MapUtils) {
+          window.MapUtils.resetConfig();
+          d3.select("#map").selectAll("*").remove();
+          initMap();
+        }
+      }
+
+      function limparSelecao() {
+        if (window.MapUtils) {
+          window.MapUtils.clearSelection();
+          console.log("Seleção limpa!");
+        }
+      }
+
+      function salvarConfiguracoes() {
+        const config = {
+          fillColor: document.getElementById("fillColor").value,
+          hoverColor: document.getElementById("hoverColor").value,
+          strokeColor: document.getElementById("strokeColor").value,
+          strokeWidth: document.getElementById("strokeWidth").value,
+          minZoom: document.getElementById("minZoom").value,
+          maxZoom: document.getElementById("maxZoom").value,
+          tooltipStyle: document.getElementById("tooltipStyle").value,
+          selectionEnabled: document.getElementById("selectionEnabled").checked,
+          clearOnBackground:
+            document.getElementById("clearOnBackground").checked,
+          clearOnEsc: document.getElementById("clearOnEsc").checked,
+          clearOnDoubleClick:
+            document.getElementById("clearOnDoubleClick").checked,
+          labelsEnabled: document.getElementById("labelsEnabled").checked,
+          fontSize: document.getElementById("fontSize").value,
+          labelColor: document.getElementById("labelColor").value,
+          minZoomLabels: document.getElementById("minZoomLabels").value,
+        };
+
+        localStorage.setItem("mapaConfig", JSON.stringify(config));
+        alert("Configurações salvas com sucesso!");
+      }
+
+      function carregarConfiguracoes() {
+        const configSalva = localStorage.getItem("mapaConfig");
+        if (configSalva) {
+          const config = JSON.parse(configSalva);
+
+          document.getElementById("fillColor").value = config.fillColor;
+          document.getElementById("hoverColor").value = config.hoverColor;
+          document.getElementById("strokeColor").value = config.strokeColor;
+          document.getElementById("strokeWidth").value = config.strokeWidth;
+          document.getElementById("minZoom").value = config.minZoom;
+          document.getElementById("maxZoom").value = config.maxZoom;
+          document.getElementById("tooltipStyle").value = config.tooltipStyle;
+
+          // Carregar configurações de seleção se existirem
+          if (config.selectionEnabled !== undefined) {
+            document.getElementById("selectionEnabled").checked =
+              config.selectionEnabled;
+          }
+          if (config.clearOnBackground !== undefined) {
+            document.getElementById("clearOnBackground").checked =
+              config.clearOnBackground;
+          }
+          if (config.clearOnEsc !== undefined) {
+            document.getElementById("clearOnEsc").checked = config.clearOnEsc;
+          }
+          if (config.clearOnDoubleClick !== undefined) {
+            document.getElementById("clearOnDoubleClick").checked =
+              config.clearOnDoubleClick;
+          }
+
+          // Carregar configurações de labels se existirem
+          if (config.labelsEnabled !== undefined) {
+            document.getElementById("labelsEnabled").checked =
+              config.labelsEnabled;
+          }
+          if (config.fontSize !== undefined) {
+            document.getElementById("fontSize").value = config.fontSize;
+          }
+          if (config.labelColor !== undefined) {
+            document.getElementById("labelColor").value = config.labelColor;
+          }
+          if (config.minZoomLabels !== undefined) {
+            document.getElementById("minZoomLabels").value =
+              config.minZoomLabels;
+          }
+
+          // Atualizar displays
+          document.getElementById("strokeWidthValue").textContent =
+            config.strokeWidth + "px";
+          document.getElementById("minZoomValue").textContent =
+            config.minZoom + "x";
+          document.getElementById("maxZoomValue").textContent =
+            config.maxZoom + "x";
+
+          // Atualizar displays dos labels
+          if (config.fontSize !== undefined) {
+            document.getElementById("fontSizeValue").textContent =
+              config.fontSize + "px";
+          }
+          if (config.minZoomLabels !== undefined) {
+            document.getElementById("minZoomLabelsValue").textContent =
+              config.minZoomLabels + "x";
+          }
+
+          alert(
+            'Configurações carregadas! Clique em "Aplicar" para ver as mudanças.'
+          );
+        } else {
+          alert("Nenhuma configuração salva encontrada.");
+        }
+      }
+    </script>
+  </body>
+</html>
