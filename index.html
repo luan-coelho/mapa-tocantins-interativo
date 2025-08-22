@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Mapa Tocantins Interativo</title>
+    <style>
+      body {
+        margin: 0;
+      }
+      svg {
+        width: 100%;
+        height: 100vh;
+        background: #f9f9f9;
+      }
+      path {
+        fill: #ddd;
+        stroke: #555;
+        stroke-width: 0.5;
+        cursor: pointer;
+        transition: fill 0.3s;
+      }
+      path:hover {
+        fill: orange;
+      }
+      .tooltip {
+        position: absolute;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        pointer-events: none;
+        z-index: 1000;
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+      .tooltip.visible {
+        opacity: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="tooltip" class="tooltip"></div>
+    <svg id="map"></svg>
+
+    <script>
+      const svg = document.getElementById("map");
+      const tooltip = document.getElementById("tooltip");
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+
+      // Função para mostrar tooltip
+      function showTooltip(event, cityName) {
+        tooltip.textContent = cityName;
+        tooltip.style.left = event.pageX + 10 + "px";
+        tooltip.style.top = event.pageY - 30 + "px";
+        tooltip.classList.add("visible");
+      }
+
+      // Função para esconder tooltip
+      function hideTooltip() {
+        tooltip.classList.remove("visible");
+      }
+
+      // Função para projetar coordenadas (lon/lat -> x/y)
+      function makeProject(features) {
+        let lons = [],
+          lats = [];
+        features.forEach((f) => {
+          f.geometry.coordinates.flat(2).forEach((coord, i) => {
+            if (i % 2 === 0) lons.push(coord);
+            else lats.push(coord);
+          });
+        });
+        const minLon = Math.min(...lons),
+          maxLon = Math.max(...lons);
+        const minLat = Math.min(...lats),
+          maxLat = Math.max(...lats);
+
+        return ([lon, lat]) => {
+          const x = ((lon - minLon) / (maxLon - minLon)) * width;
+          const y = height - ((lat - minLat) / (maxLat - minLat)) * height;
+          return [x, y];
+        };
+      }
+
+      // Carregar GeoJSON
+      fetch(
+        "https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-17-mun.json"
+      )
+        .then((res) => res.json())
+        .then((data) => {
+          const project = makeProject(data.features);
+
+          data.features.forEach((feature) => {
+            const multiPolygon = feature.geometry.type === "MultiPolygon";
+            const polygons = multiPolygon
+              ? feature.geometry.coordinates
+              : [feature.geometry.coordinates];
+
+            polygons.forEach((polygon) => {
+              polygon.forEach((ring) => {
+                const coords = ring.map(project);
+                const pathData =
+                  coords
+                    .map((p, i) =>
+                      i === 0 ? `M ${p[0]} ${p[1]}` : `L ${p[0]} ${p[1]}`
+                    )
+                    .join(" ") + " Z";
+
+                const path = document.createElementNS(
+                  "http://www.w3.org/2000/svg",
+                  "path"
+                );
+                path.setAttribute("d", pathData);
+                path.setAttribute("data-name", feature.properties.name);
+
+                // Regras de cor de exemplo
+                if (feature.properties.name === "Palmas") {
+                  path.setAttribute("fill", "#4CAF50");
+                }
+
+                // Clique na cidade
+                path.addEventListener("click", () => {
+                  alert("Cidade: " + feature.properties.name);
+                  path.setAttribute("fill", "red");
+                });
+
+                // Eventos do mouse para tooltip
+                path.addEventListener("mouseover", (event) => {
+                  showTooltip(event, feature.properties.name);
+                });
+
+                path.addEventListener("mouseout", () => {
+                  hideTooltip();
+                });
+
+                path.addEventListener("mousemove", (event) => {
+                  tooltip.style.left = event.pageX + 10 + "px";
+                  tooltip.style.top = event.pageY - 30 + "px";
+                });
+
+                svg.appendChild(path);
+              });
+            });
+          });
+        });
+    </script>
+  </body>
+</html>
